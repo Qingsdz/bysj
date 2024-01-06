@@ -252,6 +252,7 @@ def negtive_leibnitz_func_order(poly, n, items_num = default_cal):
         return negtive_leibnitz_func(poly, items_num)
     return negtive_leibnitz_func_order(negtive_leibnitz_func(poly, items_num), n+1, items_num)
 
+
 terms_L = [Term(1, [CoffTerm("", 0, 0)], 1)]
 terms_L.extend([Term(1, [CoffTerm(f"u_{i}", 1, 0)], -i) for i in range(0, 3)])
 Poly_L = Polynomial(terms_L)
@@ -278,6 +279,17 @@ Lax_L = [Term(1, [CoffTerm("", 0, 0)], 1)]
 Lax_L.extend([Term(1, [CoffTerm(f"u_{i}", 1, 0)], -i) for i in range(1, 5)])
 Poly_Lax_L = Polynomial(Lax_L)
 
-print((B_1*Poly_Lax_L - Poly_Lax_L*B_1).dell())
-print((B_2*Poly_Lax_L - Poly_Lax_L*B_2).dell())
-print((B_3*Poly_Lax_L - Poly_Lax_L*B_3).dell())
+print("(p_1 L:)\n", (B_1*Poly_Lax_L - Poly_Lax_L*B_1).dell())
+print("(p_2 L:)\n", (B_2*Poly_Lax_L - Poly_Lax_L*B_2).dell())
+print("(p_3 L:)\n", (B_3*Poly_Lax_L - Poly_Lax_L*B_3).dell())
+
+phow = [Term(1, [CoffTerm("", 0, 0)], 0)]
+phow.extend([Term(1, [CoffTerm(f"w_{i}", 1, 0)], -i) for i in range(1, 5)])
+Poly_Lax_phow = Polynomial(phow)
+
+phov = [Term(1, [CoffTerm("", 0, 0)], 0)]
+phov.extend([Term(1, [CoffTerm(f"v_{i}", 1, 0)], -i) for i in range(1, 5)])
+Poly_Lax_phov = Polynomial(phov)
+
+print("(pho * pho^-1:)\n", Poly_Lax_phow * Poly_Lax_phov)
+print("(L o pho:)\n", Poly_Lax_L * Poly_Lax_phow)
