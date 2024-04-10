@@ -4,9 +4,9 @@
 
 """
 from itertools import chain
-default_cal = 5
+default_cal = 7
 
-neg_degree = -5
+neg_degree = -7
 
 class CoffTerm:
     """
@@ -97,7 +97,7 @@ class Polynomial:
         terms    
     [T1, T2, T3, ...]
     """
-
+    
     def __init__(self, terms):
         self.terms = terms #[term11, term12, ..., term21, term22, ..., ...]
         self.combine_like_terms()
@@ -176,7 +176,6 @@ class Polynomial:
     def derivative(self):
         der_terms = []
         for term in self.terms:
-            
             for coff in term.coefficient:
                 if coff.word != "":
                     der_coff = []
@@ -254,42 +253,54 @@ def negtive_leibnitz_func_order(poly, n, items_num = default_cal):
 
 
 terms_L = [Term(1, [CoffTerm("", 0, 0)], 1)]
-terms_L.extend([Term(1, [CoffTerm(f"u_{i}", 1, 0)], -i) for i in range(0, 3)])
+terms_L.extend([Term(1, [CoffTerm(f"u_{i}", 1, 0)], -i) for i in range(0, 5)])
 Poly_L = Polynomial(terms_L)
+
+terms_1 = [Term(1, [CoffTerm("u_1", 1, 0), CoffTerm("u_2", 1, 0)], 1)]
+Poly_L = Polynomial(terms_1)
+print(Poly_L)
+print(Poly_L * Poly_L)
+
+terms_L = Term(1, [CoffTerm("a", 1, 0), CoffTerm("b", 1, 0)], -1)
+Poly_L = Polynomial([terms_L])
+
+print(Poly_L)
+print(Poly_L * Poly_L)
+
 
 #print(poly_L_1 * Poly_L)
 #print(poly_L_0 * Poly_L)
 #print(poly_L_m1 * Poly_L)
 
-P_P = Poly_L * Poly_L
+#P_P = Poly_L * Poly_L
 
-B_1 = Poly_L.remain_pos()
-B_2 = P_P.dell().remain_pos()
-B_3 = (P_P * Poly_L).dell().remain_pos()
-B_4 = (P_P*P_P).dell().remain_pos()
+#B_1 = Poly_L.remain_pos(pos=1)
+#B_2 = P_P.dell().remain_pos(pos=1)
+#B_3 = (P_P * Poly_L).dell().remain_pos(pos=1)
+#B_4 = (P_P*P_P).dell().remain_pos(pos=1)
 
-B = [B_1, B_2, B_3, B_4]
+#B = [B_1, B_2, B_3, B_4]
 
 #print(B_1)
 #print(B_2)
 #print(B_3)
 #print(B_4)
 
-Lax_L = [Term(1, [CoffTerm("", 0, 0)], 1)]
-Lax_L.extend([Term(1, [CoffTerm(f"u_{i}", 1, 0)], -i) for i in range(1, 5)])
-Poly_Lax_L = Polynomial(Lax_L)
+#Lax_L = [Term(1, [CoffTerm("", 0, 0)], 1)]
+#Lax_L.extend([Term(1, [CoffTerm(f"u_{i}", 1, 0)], -i) for i in range(1, 5)])
+#Poly_Lax_L = Polynomial(Lax_L)
 
-print("(p_1 L:)\n", (B_1*Poly_Lax_L - Poly_Lax_L*B_1).dell())
-print("(p_2 L:)\n", (B_2*Poly_Lax_L - Poly_Lax_L*B_2).dell())
-print("(p_3 L:)\n", (B_3*Poly_Lax_L - Poly_Lax_L*B_3).dell())
+#print("(p_1 L:)\n", (B_1*Poly_Lax_L - Poly_Lax_L*B_1).dell())
+#print("(p_2 L:)\n", (B_2*Poly_Lax_L - Poly_Lax_L*B_2).dell())
+#print("(p_3 L:)\n", (B_3*Poly_Lax_L - Poly_Lax_L*B_3).dell())
 
-phow = [Term(1, [CoffTerm("", 0, 0)], 0)]
-phow.extend([Term(1, [CoffTerm(f"w_{i}", 1, 0)], -i) for i in range(1, 5)])
-Poly_Lax_phow = Polynomial(phow)
+#phow = [Term(1, [CoffTerm("", 0, 0)], 0)]
+#phow.extend([Term(1, [CoffTerm(f"w_{i}", 1, 0)], -i) for i in range(1, 5)])
+#Poly_Lax_phow = Polynomial(phow)
 
-phov = [Term(1, [CoffTerm("", 0, 0)], 0)]
-phov.extend([Term(1, [CoffTerm(f"v_{i}", 1, 0)], -i) for i in range(1, 5)])
-Poly_Lax_phov = Polynomial(phov)
+#phov = [Term(1, [CoffTerm("", 0, 0)], 0)]
+#phov.extend([Term(1, [CoffTerm(f"v_{i}", 1, 0)], -i) for i in range(1, 5)])
+#Poly_Lax_phov = Polynomial(phov)
 
-print("(pho * pho^-1:)\n", Poly_Lax_phow * Poly_Lax_phov)
-print("(L o pho:)\n", Poly_Lax_L * Poly_Lax_phow)
+#print("(pho * pho^-1:)\n", Poly_Lax_phow * Poly_Lax_phov)
+#print("(L o pho:)\n", Poly_Lax_L * Poly_Lax_phow)

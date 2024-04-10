@@ -1,0 +1,15 @@
+Exception has occurred: AttributeError
+'int' object has no attribute 'terms'
+  File "/home/green/files/Documents/sources/python/bysj/2.py", line 185, in __add__
+    combine_terms.extend(other.terms)
+  File "/home/green/files/Documents/sources/python/bysj/2.py", line 278, in get_negative_leibniz_times_term
+    return get_negative_leibniz_times_term(negtive_leibnitz_func(poly, items_num), order+1, items_num)
+  File "/home/green/files/Documents/sources/python/bysj/2.py", line 278, in get_negative_leibniz_times_term
+    return get_negative_leibniz_times_term(negtive_leibnitz_func(poly, items_num), order+1, items_num)
+  File "/home/green/files/Documents/sources/python/bysj/2.py", line 239, in tmult
+    expland_p_term2 = get_negative_leibniz_times_term(order1, term2)
+  File "/home/green/files/Documents/sources/python/bysj/2.py", line 192, in __mul__
+    mul_result += tmult(term1, term2)
+  File "/home/green/files/Documents/sources/python/bysj/2.py", line 294, in <module>
+    print(Poly_L * Poly_L)
+AttributeError: 'int' object has no attribute 'terms'
