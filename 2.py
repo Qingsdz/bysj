@@ -1,10 +1,9 @@
-
 '''
-为了保持一致性 本代码不对已经生成的多项式进行修改，而是生成新的多项式 所以全部为浅拷贝 节省内存 尝试
+为了保持一致性 本不对已经生成的多项式进行修改，而是生成新的多项式 所以全部为浅拷贝 只有设计到列表拓展的时候对其进行深拷贝
 '''
 from itertools import chain
 import copy
-default_cal = -5
+default_cal = -6
 
 class CoffTerm:
     '''
@@ -95,7 +94,9 @@ class Term:
     
     @staticmethod
     def sort_coefficient(coefficient):
-        return sorted(coefficient, key = lambda coeff:coeff.word)
+        word_sorted = sorted(coefficient, key = lambda coeff:coeff.word)
+        derivatives_sorted = sorted(word_sorted, key = lambda coeff:coeff.derivatives)
+        return derivatives_sorted
     
     def __repr__(self):
         return f"Term({self.front_coefficient}, {self.coefficient}, {self.exponent})"
@@ -117,6 +118,17 @@ class Term:
         else:
             words += f"p^{self.exponent}"                       
         return words
+    
+    def print_format_term(self):
+        words = ""
+        if self.front_coefficient == 0:
+            return words
+        words += f"{self.front_coefficient}*"
+
+        for coeff in self.coefficient:
+            words += f"{coeff}*"
+
+        return words[:-1]
 
     def is_combine(self, other):
         '''
@@ -143,6 +155,14 @@ class Polynomial:
         temp_terms = self.clear_null_term(temp_terms)
         temp_terms = self.sort_terms(temp_terms)
         self.terms = temp_terms
+
+        if len(self.terms) == 0:
+            self.left = 0
+            self.right = 0
+        else:
+            self.left = self.terms[0].exponent
+            self.right = self.terms[-1].exponent
+
 
     @staticmethod
     def clear_null_term(terms):
@@ -180,6 +200,20 @@ class Polynomial:
             words += f"{term} + "
         return words[:-3]
     
+    def print_format_ploy(self):
+        words = ""
+        if len(self.terms) == 0:
+            return words
+        i = self.terms[0].exponent
+        words+=f"p^{i:} + {self.terms[0].print_format_term()}"
+        for term in self.terms[1:]:
+            if term.exponent == i:
+                words += f" + {term.print_format_term()}"
+            else:
+                i = term.exponent
+                words += f" + \n\np^{i}: {term.print_format_term()}"
+        return words
+
     def __add__(self, other):
         combine_terms = []
         combine_terms.extend(copy.deepcopy(self.terms))
@@ -187,16 +221,26 @@ class Polynomial:
         return Polynomial(combine_terms)
 
     def __mul__(self, other):
+        '''
+        实现多项式的乘法，不对其精度做限制
+        使用分配率进行依次计算
+        '''
         mul_result = Polynomial([])
         for term1 in self.terms:
             for term2 in other.terms:
                 mul_result += tmult(term1, term2)
-        return mul_result   
+        return mul_result  
+ 
+    def __sub__(self, other):
+        return self + Polynomial([Term(-1, [], 0)]) * other
 
     def remain_order(self, target_order):
         return Polynomial([term for term in self.terms if term.exponent >= target_order]) 
 
     def derivative(self):
+        '''
+        对多项式进行求导 返回多项式的导数 返回类型为多项式
+        '''
         der_terms = []
         for term in self.terms:
             for coff in term.coefficient:
@@ -211,12 +255,45 @@ class Polynomial:
         return Polynomial(der_terms)
 
     def derivatives(self, n):
+        '''
+        递归调用多项式求导 求取高阶导数
+        '''
         if n == 0:
             return self
         elif n == 1:
             return self.derivative()
         return self.derivative().derivatives(n-1)
     
+    def dell(self, word = "u_0"):
+        '''
+        去掉含有word中的多项式项
+        未验证正确与否 
+        '''
+        new_term = []
+        for term in self.terms:
+            flag = 0
+            for coeff in term.coefficient:
+                if coeff.word == word:
+                    flag = 1
+                    break
+            if flag == 0:
+                new_term.extend(copy.deepcopy(term))
+        return Polynomial(new_term)
+
+
+def target_mul(poly1, poly2, target):
+    '''
+    指定精度的多项式乘法计算 返回指定精度的多项式
+    '''
+    l1, r1, l2, r2 = poly1.left, poly1.right, poly2.left, poly2.right
+    mul_result = Polynomial([])
+    for term1 in poly1.terms:
+        for term2 in poly2.terms:
+            mul_result += tmult_targeted(term1, term2, target)
+    return mul_result  
+
+
+
     
 def tmult(term1, term2):
     order1 = term1.exponent
@@ -233,13 +310,46 @@ def tmult(term1, term2):
         return Polynomial([Term(term1.front_coefficient * term2.front_coefficient, term1.coefficient, order1 + order2)])
 
     elif order1 > 0:
-        expland_p_term2 = get_postive_leibniz_plus_term(order1, term2)
+        expland_p_term2 = get_leibniz_plus_term(order1, term2)
         return Polynomial([Term(term1.front_coefficient, term1.coefficient, 0)]) * expland_p_term2
     
     elif order1 < 0:
-        expland_p_term2 = get_negative_leibniz_times_poly(order1, Polynomial([term2]))
+        expland_p_term2 = get_leibniz_plus_term(order1, term2, -default_cal)
         return Polynomial([Term(term1.front_coefficient, term1.coefficient, 0)]) * expland_p_term2
         
+def tmult_targeted(term1, term2, target):
+    order1 = term1.exponent
+    order2 = term2.exponent
+
+    if order1 == 0:
+        if order2 < target:
+            return Polynomial([Term(0, [], 0)])
+        front_coeffi = term1.front_coefficient * term2.front_coefficient
+        coeffi = []
+        coeffi.extend(copy.deepcopy(term1.coefficient))
+        coeffi.extend(term2.coefficient)
+        return Polynomial([Term(front_coeffi, coeffi, order2)])
+    
+    elif term2.is_single():
+        if order1 + order2 < target:
+            return Polynomial([Term(0, [], 0)])
+        return Polynomial([Term(term1.front_coefficient * term2.front_coefficient, term1.coefficient, order1 + order2)])
+    
+    elif order1 > 0:
+        if order2 >= target:
+            expland_p_term2 = get_leibniz_plus_term(order1, term2)
+        elif order1 + order2 < target:
+            return Polynomial([Term(0, [], 0)])
+        else:
+            expland_p_term2 = get_leibniz_plus_term(order1, term2, order2+order1+1-target)
+        return Polynomial([Term(term1.front_coefficient, term1.coefficient, 0)]) * expland_p_term2
+    
+    elif order1 < 0:
+        if order1 + order2 < target:
+            return Polynomial([Term(0, [], 0)])
+        else:
+            expland_p_term2 = get_leibniz_plus_term(order1, term2, order1 + order2 + 1 - target)
+        return Polynomial([Term(term1.front_coefficient, term1.coefficient, 0)]) * expland_p_term2
 
 def times(i, j):
     result = 1
@@ -247,58 +357,79 @@ def times(i, j):
         result *= t
     return result
 
-
-def get_postive_leibniz_plus_term(order, term):
+def get_leibniz_plus_term(order, term, item_nums = -1):
+    if item_nums == -1:
+        item_nums = order+1
     result_Poly = Polynomial([])
-    for i in range(0, order+1):
+    for i in range(0, item_nums):
         C = times(order-i+1, order) / times(1, i) 
         result_Poly +=  Polynomial([Term(C, [], 0)]) * Polynomial([term]).derivatives(i) * Polynomial([Term(1, [], order - i)])
     return result_Poly
 
-
-def none_n(n):
-    if n % 2 == 0:
-        return 1
+def get_mul_list(poly_list, target):
+    if len(poly_list) == 1:
+        return poly_list[0].remain_order(target)
+    elif len(poly_list) == 2:
+        return target_mul(poly_list[0], poly_list[1], target)
     else:
-        return -1
+        return target_mul(get_mul_list(poly_list[1:], target-poly_list[0].left), poly_list[0], target)
 
 
-def negtive_leibnitz_func(poly, items_num):
-    result = Polynomial([])
-    for i in range(1, items_num+1):
-        der_poly = poly.derivatives(i-1)
-        result += Polynomial([Term((-1 * none_n(i)), [], 0)]) * der_poly * Polynomial([Term(1, [], -i)])
-    return result
-
-
-def get_negative_leibniz_times_poly(order, poly, items_num = -default_cal):
-    if order == 0:
-        return poly
-    elif order == -1:
-        return negtive_leibnitz_func(poly, items_num)
-    return get_negative_leibniz_times_poly(order+1, negtive_leibnitz_func(poly, items_num), items_num)       
-
-def get_target_order(poly1, poly2, target_order):
-    pass
-
-
-def specified_mul(poly1, poly2, target_order = -5):
-    order1, order2 = get_target_order(poly1, poly2, target_order)
-    return (poly1.remain_order(order1)) * (poly2.remain_order(order2))
-
-
-terms_L = Term(1, [CoffTerm("a", 1, 0), CoffTerm("b", 1, 0)], -1)
-Poly_L = Polynomial([terms_L])
+#terms_L = [Term(1, [CoffTerm("u_-1", 1, 0)], 1)]
+#terms_L.extend([Term(1, [CoffTerm("u_-2", 1, 0)], 2)])
+#terms_L.extend([Term(1, [CoffTerm(f"u_{i}", 1, 0)], -i) for i in range(0, 3)])
+#Poly_L = Polynomial(terms_L)
 
 #print(Poly_L)
 #print(Poly_L * Poly_L)
+#print(target_mul(Poly_L, Poly_L, -4))
 
-terms_m1 = Term(1, [], -3)
-terms_f = Term(1, [CoffTerm("f", 1, 0)], 0)
-print(Polynomial([terms_m1]) * Polynomial([terms_f]))
+#terms_m1 = Term(1, [], -3)
+#terms_f = Term(1, [CoffTerm("f", 1, 0)], 0)
+#print(Polynomial([terms_m1]) * Polynomial([terms_f]))
+#print(get_leibniz_plus_term(-3, terms_f, 7))
 
 
-        
+
+terms_L = [Term(1, [], 1)]
+terms_L.extend([Term(1, [CoffTerm(f"u_{i}", 1, 0)], -i) for i in range(1, 10)])
+Poly_L = Polynomial(terms_L)
+
+
+L_greater_then = 1
+
+Poly = [[Poly_L for i in range(0, j)] for j in range (1, 6)]
+B_s = []
+for i, poly_list in enumerate(Poly):
+    B = get_mul_list(poly_list, L_greater_then)
+    print(f"B_{i+1}:{B}")
+    B_s.append(B)
+
+#B_1 = Poly_L.remain_order(0)
+
+#Poly_L_2 = target_mul(Poly_L, Poly_L, target = -4)
+#B_2 = target_mul(Poly_L, Poly_L, target=0)
+#B_3 = target_mul(Poly_L, Poly_L_2, target=0)
+
+#print(f"B_1:{B_1}")
+#print(f"B_2:{B_2}")
+#print(f"Poly_L_2:{Poly_L_2}")
+#print(f"B_3:{B_3}")
+
+#B_3_list = get_mul_list(Poly_list, 0)
+#print(f"B_3_list:{B_3_list}")
+Lax_Poly_s = []
+
+for i, B in enumerate(B_s):
+    one = target_mul(B, Poly_L, -3)
+    two = target_mul(Poly_L, B, -3)
+    Lax_Poly = one - two
+    print(f"---------------B_{i+1}-----------------")
+    print(f"{Lax_Poly.print_format_ploy()}")
+    Lax_Poly_s.append(Lax_Poly)
+
+
+
 
 
 

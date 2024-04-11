@@ -261,8 +261,11 @@ Poly_L = Polynomial(terms_1)
 print(Poly_L)
 print(Poly_L * Poly_L)
 
-terms_L = Term(1, [CoffTerm("a", 1, 0), CoffTerm("b", 1, 0)], -1)
-Poly_L = Polynomial([terms_L])
+
+terms_L = [Term(1, [CoffTerm("u_-1", 1, 0)], 1)]
+terms_L.extend([Term(1, [CoffTerm("u_-2", 1, 0)], 2)])
+terms_L.extend([Term(1, [CoffTerm(f"u_{i}", 1, 0)], -i) for i in range(0, 3)])
+Poly_L = Polynomial(terms_L)
 
 print(Poly_L)
 print(Poly_L * Poly_L)
