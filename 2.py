@@ -43,6 +43,40 @@ class CoffTerm:
             return f"{self.word}{deriva}"
         else:
             return f"{self.word}{deriva}^{self.exponent}"
+        
+
+    def print_lex(self):
+        words = ""
+        deriva = ""
+        exponent_text = ""
+        if self.derivatives != 0:
+            deriva += ","
+            deriva += f"{'x' * self.derivatives}"
+        
+        if self.exponent == 1:
+            exponent_text += ""
+        else:
+            exponent_text += f"^{{{self.exponent}}}"
+        
+        count_ = self.word.count('_')
+        if count_ >= 1:
+            first_word, _, second_word = self.word.rpartition("_")
+            words += first_word
+            words += exponent_text
+            words += "_{"
+            words += second_word
+            words += deriva
+            words += "}"
+
+        else:
+            words += self.word
+            words += exponent_text
+            words += "_{"
+            words += deriva
+            words += "}"
+
+        return words
+    
 
     def is_null(self):
         '''
@@ -128,7 +162,35 @@ class Term:
         for coeff in self.coefficient:
             words += f"{coeff}*"
 
-        return words[:-1]
+        return words
+
+    def print_lex(self):
+        '''
+        实现lex格式的打印 此模式为修正系数项符号的打印 所以系数项符号在Term中实现打印
+        '''
+        words = ""
+        if self.front_coefficient == 0:
+            return words     
+
+        if self.front_coefficient == 1.0:
+            words+= f"+ "
+        elif self.front_coefficient > 0:
+            words+=f"+ {int(self.front_coefficient)}"
+        elif self.front_coefficient < 0:
+            words+=f"- {-int(self.front_coefficient)}"
+        
+        for coeff in self.coefficient:
+            words += f"{coeff.print_lex()}"
+
+        if self.exponent == 0:
+            pass
+        elif self.exponent == 1:
+            words+= f"\partial"
+        else:
+            words+= f"\partial^{{{self.exponent}}}"
+        
+        return words
+
 
     def is_combine(self, other):
         '''
@@ -213,6 +275,15 @@ class Polynomial:
                 i = term.exponent
                 words += f" + \n\np^{i}: {term.print_format_term()}"
         return words
+    
+    def print_lex(self):
+        words = ""
+        for term in self.terms:
+            words += f" {term.print_lex()} "
+        if words[1] == '+':
+            words = words[2:]
+        return words[:-1]
+
 
     def __add__(self, other):
         combine_terms = []
@@ -279,6 +350,8 @@ class Polynomial:
             if flag == 0:
                 new_term.extend(copy.deepcopy(term))
         return Polynomial(new_term)
+
+
 
 
 def target_mul(poly1, poly2, target):
@@ -372,7 +445,7 @@ def get_mul_list(poly_list, target):
     elif len(poly_list) == 2:
         return target_mul(poly_list[0], poly_list[1], target)
     else:
-        return target_mul(get_mul_list(poly_list[1:], target-poly_list[0].left), poly_list[0], target)
+        return target_mul(get_mul_list(poly_list[:-1], target-poly_list[0].left), poly_list[-1], target)
 
 
 #terms_L = [Term(1, [CoffTerm("u_-1", 1, 0)], 1)]
@@ -395,14 +468,15 @@ terms_L = [Term(1, [], 1)]
 terms_L.extend([Term(1, [CoffTerm(f"u_{i}", 1, 0)], -i) for i in range(1, 10)])
 Poly_L = Polynomial(terms_L)
 
+print(Poly_L.print_lex())
+L_greater_then = 0
 
-L_greater_then = 1
 
 Poly = [[Poly_L for i in range(0, j)] for j in range (1, 6)]
 B_s = []
 for i, poly_list in enumerate(Poly):
     B = get_mul_list(poly_list, L_greater_then)
-    print(f"B_{i+1}:{B}")
+    print(f"B_{i+1} = {B.print_lex()}")
     B_s.append(B)
 
 #B_1 = Poly_L.remain_order(0)
@@ -418,6 +492,7 @@ for i, poly_list in enumerate(Poly):
 
 #B_3_list = get_mul_list(Poly_list, 0)
 #print(f"B_3_list:{B_3_list}")
+
 Lax_Poly_s = []
 
 for i, B in enumerate(B_s):
@@ -425,7 +500,7 @@ for i, B in enumerate(B_s):
     two = target_mul(Poly_L, B, -3)
     Lax_Poly = one - two
     print(f"---------------B_{i+1}-----------------")
-    print(f"{Lax_Poly.print_format_ploy()}")
+    print(f"[B_{i+1}*L-L*B_{i+1}] = {Lax_Poly.print_lex()}")
     Lax_Poly_s.append(Lax_Poly)
 
 
