@@ -4,6 +4,8 @@
 from itertools import chain
 import copy
 default_cal = -6
+debug = False
+
 
 class CoffTerm:
     '''
@@ -174,6 +176,8 @@ class Term:
 
         if self.front_coefficient == 1.0:
             words+= f"+ "
+        elif self.front_coefficient == -1.0:
+            words += f"- "
         elif self.front_coefficient > 0:
             words+=f"+ {int(self.front_coefficient)}"
         elif self.front_coefficient < 0:
@@ -280,9 +284,9 @@ class Polynomial:
         words = ""
         for term in self.terms:
             words += f" {term.print_lex()} "
-        if words[1] == '+':
+        if words != '' and words[1] == '+':
             words = words[2:]
-        return words[:-1]
+        return words
 
 
     def __add__(self, other):
@@ -443,9 +447,12 @@ def get_mul_list(poly_list, target):
     if len(poly_list) == 1:
         return poly_list[0].remain_order(target)
     elif len(poly_list) == 2:
+        #print(f"target_mul:\n{poly_list[0].print_lex()}\n{poly_list[1].print_lex()}\n计算精度：{target}")
         return target_mul(poly_list[0], poly_list[1], target)
     else:
-        return target_mul(get_mul_list(poly_list[:-1], target-poly_list[0].left), poly_list[-1], target)
+        pre = get_mul_list(poly_list[:-1], target-poly_list[0].left)
+        #print(f"pre:{pre.print_lex()}*\nlist[-1]:{poly_list[-1].print_lex()}\ntarget:{target}\n")
+        return target_mul(pre, poly_list[-1], target)
 
 
 #terms_L = [Term(1, [CoffTerm("u_-1", 1, 0)], 1)]
@@ -470,13 +477,19 @@ Poly_L = Polynomial(terms_L)
 
 print(Poly_L.print_lex())
 L_greater_then = 0
+L_debug_greater_then = 1
 
-
-Poly = [[Poly_L for i in range(0, j)] for j in range (1, 6)]
+Poly = [[Poly_L for i in range(0, j)] for j in range (1, 4)]
 B_s = []
 for i, poly_list in enumerate(Poly):
     B = get_mul_list(poly_list, L_greater_then)
-    print(f"B_{i+1} = {B.print_lex()}")
+    if debug == True:
+        for term in B.terms:
+            if term.exponent < L_debug_greater_then:
+                for coff in term.coefficient:
+                    coff.word += "-"
+
+    print(f"B_{i+1} = {B.print_lex()}") 
     B_s.append(B)
 
 #B_1 = Poly_L.remain_order(0)
@@ -496,11 +509,12 @@ for i, poly_list in enumerate(Poly):
 Lax_Poly_s = []
 
 for i, B in enumerate(B_s):
-    one = target_mul(B, Poly_L, -3)
-    two = target_mul(Poly_L, B, -3)
+    one = target_mul(B, Poly_L, -4)
+    two = target_mul(Poly_L, B, -4)
     Lax_Poly = one - two
     print(f"---------------B_{i+1}-----------------")
-    print(f"[B_{i+1}*L-L*B_{i+1}] = {Lax_Poly.print_lex()}")
+    print(f"B*L:{one.print_lex()}\nL*B:{two.print_lex()}\n")
+    print(f"[B_{i+1}, L] = B_{i+1}*L-L*B_{i+1} = {Lax_Poly.print_lex()}")
     Lax_Poly_s.append(Lax_Poly)
 
 
